@@ -68,10 +68,18 @@ def TumorImg(Path_subset, List_filenames, df_tumor):
                 # take only tumor image with above information
                 center = np.array([node_x, node_y, node_z])
                 v_center = np.rint( (center-origin)/spacing )
-                img = Array_img[int(v_center[2])]
+                img = Array_img[int(v_center[2])].copy()
+                img = img.astype(float)
+                # background setting
+                mask_floor = img < -600
+                mask_ceil = img > 100
+                mask = mask_ceil | mask_floor
+                img[mask] = -2048
                 # normalize the img
-                img_norm = (img-np.min(img))/(np.max(img)-np.min(img))
-                np.save(Path_save + 'Imgs_t_%04d_%06d.npy' % (fcount, idx_node), img_norm)
+                Nnum = img[img > -2048]
+                img[img > -2048] = (Nnum - np.min(Nnum)) / ( np.max(Nnum) - np.min(Nnum) )
+                img[img == -2048] = -1
+                np.save(Path_save + 'Imgs_t_%04d_%06d.npy' % (fcount, idx_node), img)
                 tmp_ImgName = 'Imgs_t_%04d_%06d.npy' % (fcount, idx_node)
-                saveInfo = np.array([tmp_ImgName, node_x, node_y, node_z, diam, 1])
+                saveInfo = np.array([tmp_ImgName, v_center[0], v_center[1], v_center[2], diam, 1])
                 np.savetxt(Path_save + 'Labs_t_%04d_%06d.csv' % (fcount, idx_node), saveInfo, fmt = '%s', newline = ',')
